@@ -1,0 +1,35 @@
+{
+    "dart.flutterSdkPath": null,
+    "dart.openDevTools": "flutter",
+    "dart.previewFlutterUiGuides": true,
+    "dart.previewFlutterUiGuidesCustomTracking": true,
+    "dart.flutterHotReloadOnSave": "all",
+    "dart.flutterCreateAndroidLanguage": "kotlin",
+    "dart.flutterCreateIOSLanguage": "swift",
+    "dart.flutterCreatePlatforms": ["android", "ios"],
+    "dart.debugExternalPackageLibraries": false,
+    "dart.debugSdkLibraries": false,
+    "files.associations": {
+        "*.dart": "dart"
+    },
+    "emmet.includeLanguages": {
+        "dart": "html"
+    },
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [80],
+    "editor.selectionHighlight": false,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.suggestSelection": "first",
+    "editor.tabCompletion": "onlySnippets",
+    "editor.wordBasedSuggestions": "off",
+    "[dart]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.selectionHighlight": false,
+        "editor.suggest.snippetsPreventQuickSuggestions": false,
+        "editor.suggestSelection": "first",
+        "editor.tabCompletion": "onlySnippets",
+        "editor.wordBasedSuggestions": "off"
+    }
+}
