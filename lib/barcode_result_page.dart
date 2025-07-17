@@ -21,6 +21,34 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   bool isLoadingAnalise = false;
   String? errorMessage;
 
+  // Controle para mostrar dados JSON
+  int _tapCount = 0;
+  bool _showJsonData = false;
+  DateTime? _lastTapTime;
+
+  void _handleTap() {
+    if (!mounted) return;
+
+    final now = DateTime.now();
+
+    // Se passou mais de 2 segundos desde o último toque, resetar contador
+    if (_lastTapTime == null || now.difference(_lastTapTime!).inSeconds > 2) {
+      _tapCount = 1;
+    } else {
+      _tapCount++;
+    }
+
+    _lastTapTime = now;
+
+    // Se chegou a 7 toques, alternar visibilidade dos dados JSON
+    if (_tapCount >= 7) {
+      setState(() {
+        _showJsonData = !_showJsonData;
+        _tapCount = 0;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +56,8 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   }
 
   Future<void> _fetchProductData() async {
+    if (!mounted) return;
+
     setState(() {
       isLoading = true;
       errorMessage = null;
@@ -35,6 +65,9 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
 
     try {
       final data = await OpenFoodFactsService.getProductInfo(widget.barcodeResult);
+
+      if (!mounted) return;
+
       setState(() {
         productData = data;
         isLoading = false;
@@ -45,6 +78,8 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
         _analisarBrasileiridade(data['product']['brands']);
       }
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         errorMessage = 'Erro ao buscar informações do produto: $e';
         isLoading = false;
@@ -53,6 +88,8 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   }
 
   Future<void> _analisarBrasileiridade(String marcas) async {
+    if (!mounted) return;
+
     setState(() {
       isLoadingAnalise = true;
     });
@@ -61,11 +98,24 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
       // Analisa múltiplas marcas e retorna a com maior grau de brasileiridade
       final analise = await BrasileiridadeService.analisarMultiplasMarcas(marcas);
 
+      // Se há dados do produto, aplica análise OpenFoodFacts
+      AnaliseResult analiseComplementada = analise;
+      if (productData != null) {
+        analiseComplementada = BrasileiridadeService.analisarDadosOpenFoodFacts(
+          productData!,
+          analise,
+        );
+      }
+
+      if (!mounted) return;
+
       setState(() {
-        analiseResultado = analise;
+        analiseResultado = analiseComplementada;
         isLoadingAnalise = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         isLoadingAnalise = false;
       });
@@ -75,6 +125,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
 
   Future<void> _fetchCompleteProductData() async {
     if (completeProductData != null) return; // Já carregado
+    if (!mounted) return;
 
     setState(() {
       isLoadingComplete = true;
@@ -82,11 +133,16 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
 
     try {
       final data = await OpenFoodFactsService.getProductInfoComplete(widget.barcodeResult);
+
+      if (!mounted) return;
+
       setState(() {
         completeProductData = data;
         isLoadingComplete = false;
       });
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         isLoadingComplete = false;
       });
@@ -154,127 +210,57 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   }
 
   Widget _buildProductDetails(Map<String, dynamic> product) {
-    final isBrazilian =
-        product['countries'] != null &&
-        (product['countries'].toLowerCase().contains('brazil') ||
-            product['countries'].toLowerCase().contains('brasil'));
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Banner brasileiro (se aplicável)
-        if (isBrazilian) ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFF009639), const Color(0xFF00B142)],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF009639).withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Text('🇧🇷', style: const TextStyle(fontSize: 24)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'PRODUTO BRASILEIRO',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Apoie a economia nacional! 💚',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.verified, color: Colors.white, size: 20),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
+        // Card de alerta no topo
+        _buildAlertCard(),
 
-        // Imagem do produto
-        _buildProductImage(product),
+        // Header compacto do produto (imagem, nome e marca)
+        _buildProductHeader(product),
         const SizedBox(height: 16),
 
-        if (product['product_name'] != null) ...[
-          _buildInfoRow('Nome', product['product_name']),
-          const SizedBox(height: 12),
-        ],
-        if (product['brands'] != null) ...[
-          _buildInfoRow('Marca', product['brands']),
-          const SizedBox(height: 12),
-        ],
         // Análise de brasileiridade
         if (product['brands'] != null) ...[
           _buildBrasileiridadeAnalise(),
           const SizedBox(height: 12),
         ],
-        if (product['countries'] != null) ...[
-          _buildCountriesRow('Países', product['countries']),
-          const SizedBox(height: 12),
-        ],
         const Divider(height: 32),
-        ExpansionTile(
-          title: const Text(
-            'Dados Completos (JSON)',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          onExpansionChanged: (isExpanded) {
-            if (isExpanded) {
-              _fetchCompleteProductData();
-            }
-          },
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: isLoadingComplete
-                  ? const Column(
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 8),
-                        Text('Carregando dados completos...', style: TextStyle(fontSize: 12)),
-                      ],
-                    )
-                  : SelectableText(
-                      _formatJson(completeProductData ?? productData!),
-                      style: const TextStyle(fontFamily: 'Courier', fontSize: 12),
-                    ),
+        if (_showJsonData)
+          ExpansionTile(
+            title: const Text(
+              'Dados Completos (JSON)',
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
-          ],
-        ),
+            onExpansionChanged: (isExpanded) {
+              if (isExpanded) {
+                _fetchCompleteProductData();
+              }
+            },
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: isLoadingComplete
+                    ? const Column(
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 8),
+                          Text('Carregando dados completos...', style: TextStyle(fontSize: 12)),
+                        ],
+                      )
+                    : SelectableText(
+                        _formatJson(completeProductData ?? productData!),
+                        style: const TextStyle(fontFamily: 'Courier', fontSize: 12),
+                      ),
+              ),
+            ],
+          ),
       ],
     );
   }
@@ -309,222 +295,76 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
     );
   }
 
-  Widget _buildCountriesRow(String label, String value) {
-    final isBrazilian =
-        value.toLowerCase().contains('brazil') || value.toLowerCase().contains('brasil');
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: Colors.black87,
-              ),
-            ),
-            if (isBrazilian) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF009639),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('🇧🇷', style: const TextStyle(fontSize: 12)),
-                    const SizedBox(width: 4),
-                    Text(
-                      'PRODUTO BRASILEIRO',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
+  Widget _buildProductHeader(Map<String, dynamic> product) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          // Imagem do produto (compacta)
+          _buildCompactProductImage(product),
+          const SizedBox(width: 16),
+          // Nome e marca
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (product['product_name'] != null) ...[
+                  Text(
+                    'Nome',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey[600],
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isBrazilian ? const Color(0xFFE8F5E8) : Colors.grey[50],
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isBrazilian ? const Color(0xFF009639) : Colors.grey[200]!,
-              width: isBrazilian ? 2 : 1,
-            ),
-          ),
-          child: SelectableText(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              color: isBrazilian ? const Color(0xFF006B2F) : null,
-              fontWeight: isBrazilian ? FontWeight.w500 : null,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.grey[200]!),
-          ),
-          child: SelectableText(value, style: const TextStyle(fontSize: 14)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBrasileiridadeAnalise() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.analytics, size: 16, color: Colors.blue[600]),
-            const SizedBox(width: 8),
-            Text(
-              'Análise de Brasileiridade',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue[600]),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: Colors.blue[200]!),
-          ),
-          child: isLoadingAnalise
-              ? const Row(
-                  children: [
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product['product_name'],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
                     ),
-                    SizedBox(width: 12),
-                    Text('Analisando brasileiridade da marca...'),
-                  ],
-                )
-              : analiseResultado == null
-              ? const Text('Análise não disponível')
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (analiseResultado!.semDados) ...[
-                      Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 16, color: Colors.orange[600]),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Dados insuficientes para análise',
-                              style: TextStyle(color: Colors.orange[600]),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else ...[
-                      // Grau de brasileiridade
-                      Row(
-                        children: [
-                          Text(
-                            'Grau: ${analiseResultado!.grauBrasileiridade}%',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: LinearProgressIndicator(
-                              value: (analiseResultado!.grauBrasileiridade ?? 0) / 100,
-                              backgroundColor: Colors.grey[300],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                _getCorBrasileiridade(analiseResultado!.grauBrasileiridade ?? 0),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      // Classificação
-                      Text(
-                        analiseResultado!.classificacao,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                      ),
-                      const SizedBox(height: 8),
-                      // Detalhes expandíveis
-                      if (analiseResultado!.detalhes.isNotEmpty) ...[
-                        ExpansionTile(
-                          title: const Text(
-                            'Ver detalhes da análise',
-                            style: TextStyle(fontSize: 12),
-                          ),
-                          tilePadding: EdgeInsets.zero,
-                          childrenPadding: const EdgeInsets.only(top: 8),
-                          children: [
-                            ...analiseResultado!.detalhes.map(
-                              (detalhe) => Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('• ', style: TextStyle(fontSize: 12)),
-                                    Expanded(
-                                      child: Text(detalhe, style: const TextStyle(fontSize: 12)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ],
-                ),
-        ),
-      ],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                if (product['brands'] != null) ...[
+                  Text(
+                    'Marca',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product['brands'],
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Color _getCorBrasileiridade(int grau) {
-    if (grau >= 85) return const Color(0xFF009639); // Verde Brasil
-    if (grau >= 65) return Colors.green;
-    if (grau >= 45) return Colors.orange;
-    if (grau >= 25) return Colors.deepOrange;
-    return Colors.red;
-  }
-
-  Widget _buildProductImage(Map<String, dynamic> product) {
+  Widget _buildCompactProductImage(Map<String, dynamic> product) {
     String? imageUrl;
 
     // Prioridade das imagens:
@@ -559,73 +399,69 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
 
     if (imageUrl == null) {
       return Container(
-        width: double.infinity,
-        height: 120,
+        width: 80,
+        height: 80,
         decoration: BoxDecoration(
           color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.grey[300]!),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.image_not_supported, size: 48, color: Colors.grey[400]),
-            const SizedBox(height: 8),
-            Text('Imagem não disponível', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
+            Icon(Icons.image_not_supported, size: 24, color: Colors.grey[400]),
+            const SizedBox(height: 4),
+            Text(
+              'Sem imagem',
+              style: TextStyle(color: Colors.grey[600], fontSize: 10),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       );
     }
 
     return Container(
-      width: double.infinity,
-      height: 200,
+      width: 80,
+      height: 80,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[300]!),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Image.network(
           imageUrl,
           fit: BoxFit.contain,
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) return child;
             return Container(
-              height: 200,
+              width: 80,
+              height: 80,
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    Text('Carregando imagem...', style: TextStyle(color: Colors.grey[600])),
-                  ],
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                      : null,
                 ),
               ),
             );
           },
           errorBuilder: (context, error, stackTrace) {
             return Container(
-              height: 200,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.broken_image, size: 48, color: Colors.grey[400]),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Erro ao carregar imagem',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  ),
+                  Icon(Icons.broken_image, size: 24, color: Colors.grey[400]),
+                  const SizedBox(height: 4),
+                  Text('Erro', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
                 ],
               ),
             );
@@ -644,10 +480,141 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
     }
   }
 
+  Widget _buildBrasileiridadeAnalise() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.analytics, size: 16, color: Colors.blue[600]),
+            const SizedBox(width: 8),
+            Text(
+              'Análise de Brasileiridade',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue[600]),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _handleTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.blue[200]!),
+            ),
+            child: isLoadingAnalise
+                ? const Row(
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Analisando brasileiridade da marca...'),
+                    ],
+                  )
+                : analiseResultado == null
+                ? const Text('Análise não disponível')
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (analiseResultado!.semDados) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 16, color: Colors.orange[600]),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Dados insuficientes para análise',
+                                style: TextStyle(color: Colors.orange[600]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else ...[
+                        // Grau de brasileiridade
+                        Row(
+                          children: [
+                            Text(
+                              'Grau: ${analiseResultado!.grauBrasileiridade}%',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                value: (analiseResultado!.grauBrasileiridade ?? 0) / 100,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  _getCorBrasileiridade(analiseResultado!.grauBrasileiridade ?? 0),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Classificação
+                        Text(
+                          analiseResultado!.classificacao,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        const SizedBox(height: 8),
+                        // Detalhes sempre visíveis
+                        if (analiseResultado!.detalhes.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Detalhes da análise:',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                          const SizedBox(height: 4),
+                          ...analiseResultado!.detalhes.map(
+                            (detalhe) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('• ', style: TextStyle(fontSize: 12)),
+                                  Expanded(
+                                    child: Text(detalhe, style: const TextStyle(fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getCorBrasileiridade(int grau) {
+    if (grau >= 85) return const Color(0xFF009639); // Verde Brasil
+    if (grau >= 65) return Colors.green;
+    if (grau >= 45) return Colors.orange;
+    if (grau >= 25) return Colors.deepOrange;
+    return Colors.red;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Código Escaneado'), centerTitle: true),
+      appBar: AppBar(
+        title: Row(
+          children: [
+            Icon(Icons.shopping_cart, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            const Text('Informações do Produto'),
+          ],
+        ),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -656,34 +623,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
             Expanded(
               child: Card(
                 elevation: 2,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.shopping_cart,
-                            color: Theme.of(context).colorScheme.secondary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Informações do Produto',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(child: _buildProductInfo()),
-                    ],
-                  ),
-                ),
+                child: Padding(padding: const EdgeInsets.all(16.0), child: _buildProductInfo()),
               ),
             ),
             const SizedBox(height: 16),
@@ -724,6 +664,187 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Cria um card de alerta no topo da tela
+  Widget _buildAlertCard() {
+    if (analiseResultado == null || analiseResultado!.semDados) return const SizedBox.shrink();
+
+    final temEUA = BrasileiridadeService.temEnvolvimentoAmericano(analiseResultado!);
+    final grau = analiseResultado!.grauBrasileiridade ?? 0;
+
+    // REGRA ESPECIAL: EUA sempre resulta em card vermelho
+    if (temEUA) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF6B6B), Color(0xFFFF8E8E)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF6B6B).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text('🇺🇸', style: TextStyle(fontSize: 20)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ENVOLVIMENTO AMERICANO',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    grau >= 65
+                        ? 'Apesar da brasileiridade de ${grau}%, este produto tem ligação com os EUA'
+                        : 'Este produto possui envolvimento com os Estados Unidos',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Text('🇺🇸', style: TextStyle(fontSize: 20)),
+          ],
+        ),
+      );
+    }
+
+    // Classificação por porcentagem usando as cores definidas
+    return _buildClassificationCard(grau);
+  }
+
+  Widget _buildClassificationCard(int grau) {
+    Color primaryColor;
+    Color secondaryColor;
+    String emoji;
+    String title;
+    String description;
+    String finalIcon; // Mudamos de IconData para String para emojis
+
+    if (grau >= 85) {
+      // 85-100%: 🇧🇷 Totalmente Brasileira
+      primaryColor = const Color(0xFF009639);
+      secondaryColor = const Color(0xFF00B142);
+      emoji = '🟢';
+      title = 'TOTALMENTE BRASILEIRA';
+      description =
+          'Produto 100% brasileiro! Comprando você fortalece nossa economia. ${grau}% brasileira 💚';
+      finalIcon = '🇧🇷'; // Bandeira brasileira
+    } else if (grau >= 65) {
+      // 65-84%: 🟢 Majoritariamente Brasileira
+      primaryColor = const Color(0xFF4CAF50);
+      secondaryColor = const Color(0xFF66BB6A);
+      emoji = '🟢';
+      title = 'MAJORITARIAMENTE BRASILEIRA';
+      description = 'Produto com forte conexão brasileira! ${grau}% brasileira 💚';
+      finalIcon = '🇧🇷'; // Bandeira brasileira
+    } else if (grau >= 45) {
+      // 45-64%: 🟡 Parcialmente Brasileira
+      primaryColor = const Color(0xFFFFC107);
+      secondaryColor = const Color(0xFFFFD54F);
+      emoji = '🟡';
+      title = 'PARCIALMENTE BRASILEIRA';
+      description = 'Produto com conexão parcial ao Brasil. ${grau}% brasileira';
+      finalIcon = '⚠️'; // Ícone de alerta
+    } else if (grau >= 25) {
+      // 25-44%: 🟠 Pouco Brasileira
+      primaryColor = const Color(0xFFFF9800);
+      secondaryColor = const Color(0xFFFFB74D);
+      emoji = '🟠';
+      title = 'POUCO BRASILEIRA';
+      description = 'Produto com baixa conexão ao Brasil. ${grau}% brasileira';
+      finalIcon = '⚠️'; // Ícone de alerta
+    } else if (grau > 0) {
+      // 1-24%: 🔴 Minimamente Brasileira
+      primaryColor = const Color(0xFFFF5722);
+      secondaryColor = const Color(0xFFFF7043);
+      emoji = '🔴';
+      title = 'MINIMAMENTE BRASILEIRA';
+      description = 'Produto com conexão mínima ao Brasil. ${grau}% brasileira';
+      finalIcon = '⚠️'; // Ícone de alerta
+    } else {
+      // 0%: 🌍 Marca Estrangeira
+      primaryColor = const Color(0xFF607D8B);
+      secondaryColor = const Color(0xFF78909C);
+      emoji = '🌍';
+      title = 'MARCA ESTRANGEIRA';
+      description = 'Produto sem conexão identificada com o Brasil';
+      finalIcon = '⚠️'; // Ícone de alerta
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryColor, secondaryColor],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(emoji, style: const TextStyle(fontSize: 20)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(description, style: const TextStyle(color: Colors.white, fontSize: 12)),
+              ],
+            ),
+          ),
+          Text(finalIcon, style: const TextStyle(fontSize: 20)), // Mudamos de Icon para Text
+        ],
       ),
     );
   }

@@ -150,44 +150,72 @@ class _SearchPageState extends State<SearchPage> {
               ),
             ),
             const SizedBox(height: 24),
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.lightbulb_outline,
-                          color: Theme.of(context).colorScheme.secondary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Códigos para Teste',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.onSurface,
+            Expanded(
+              child: Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline,
+                            color: Theme.of(context).colorScheme.secondary,
+                            size: 20,
                           ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Códigos para Teste',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView(
+                          children: [
+                            _buildTestCode('7891000053508', 'Nescau (Nestlé Brasil)'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('7891000100103', 'Leite Ninho (Nestlé Brasil)'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('7894900010015', 'Coca-Cola (Brasil)'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('7898943163059', 'Atum Robson Crusoé (Brasil)'),
+                            const SizedBox(height: 8),
+
+                            // Produtos FAKE para teste das classificações
+                            _buildTestCode('FAKE100', 'Produto FAKE - 100% Brasileiro'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('FAKE75', 'Produto FAKE - 75% Brasileiro'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('FAKE50', 'Produto FAKE - 50% Brasileiro'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('FAKE30', 'Produto FAKE - 30% Brasileiro'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('FAKE15', 'Produto FAKE - 15% Brasileiro'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('FAKE0', 'Produto FAKE - 0% Brasileiro'),
+                            const SizedBox(height: 8),
+                            _buildTestCode('FAKEUSA', 'Produto FAKE - EUA'),
+                            const SizedBox(height: 8),
+
+                            _buildTestCode('3017620422003', 'Nutella (Ferrero França)'),
+                            const SizedBox(height: 8),
+                          ],
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTestCode('7891000053508', 'Nescau (Nestlé Brasil)'),
-                    const SizedBox(height: 8),
-                    _buildTestCode('7891000100103', 'Leite Ninho (Nestlé Brasil)'),
-                    const SizedBox(height: 8),
-                    _buildTestCode('3017620422003', 'Nutella (Ferrero França)'),
-                    const SizedBox(height: 8),
-                    _buildTestCode('8712100849718', 'Red Bull (Áustria)'),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            const Spacer(),
+            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -211,6 +239,11 @@ class _SearchPageState extends State<SearchPage> {
     return InkWell(
       onTap: () {
         _searchController.text = code;
+        // Navegar diretamente para a página de resultados
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => BarcodeResultPage(barcodeResult: code)),
+        );
       },
       child: Container(
         padding: const EdgeInsets.all(12),

@@ -7,6 +7,11 @@ class OpenFoodFactsService {
 
   /// Busca informações otimizadas do produto para exibição
   static Future<Map<String, dynamic>?> getProductInfo(String barcode) async {
+    // Verifica se é um produto FAKE para teste
+    if (barcode.startsWith('FAKE')) {
+      return _getFakeProductData(barcode);
+    }
+
     try {
       final url = '$_baseUrl/$barcode.json';
       print('Fazendo requisição otimizada para: $url');
@@ -20,6 +25,11 @@ class OpenFoodFactsService {
         'image_front_url', // Imagem frontal (fallback)
         'image_url', // Imagem geral (fallback)
         'image_packaging_url', // Imagem da embalagem (fallback)
+        // Campos adicionais para análise de brasileiridade
+        'manufacturing_places', // Locais de fabricação
+        'origins', // Origem dos ingredientes
+        'countries_tags', // Tags de países
+        'made_in', // País de fabricação
       ].join(',');
 
       final uri = Uri.parse(url).replace(queryParameters: {'fields': fields});
@@ -63,6 +73,11 @@ class OpenFoodFactsService {
 
   /// Busca informações completas do produto para o JSON expandido
   static Future<Map<String, dynamic>?> getProductInfoComplete(String barcode) async {
+    // Verifica se é um produto FAKE para teste
+    if (barcode.startsWith('FAKE')) {
+      return _getFakeProductData(barcode);
+    }
+
     try {
       final url = '$_baseUrl/$barcode.json';
       print('Fazendo requisição completa para: $url');
@@ -91,5 +106,152 @@ class OpenFoodFactsService {
       print('Erro ao buscar dados completos: $e');
       return null;
     }
+  }
+
+  /// Retorna dados fictícios para produtos de teste
+  static Map<String, dynamic> _getFakeProductData(String barcode) {
+    final fakeProducts = {
+      'FAKE100': {
+        'status': 1,
+        'product': {
+          'product_name': '[TESTE] Produto 100% Brasileiro',
+          'brands': 'Marca Brasileira LTDA',
+          'countries': 'Brasil',
+          'manufacturing_places': 'São Paulo, Brasil',
+          'origins': 'Ingredientes do Brasil',
+          'countries_tags': ['en:brazil', 'pt:brasil'],
+          'made_in': 'Brasil',
+          'image_front_url':
+              'https://via.placeholder.com/200x200/009639/FFFFFF?text=FAKE+100%25+BR',
+          'selected_images': {
+            'front': {
+              'display': {
+                'pt': 'https://via.placeholder.com/200x200/009639/FFFFFF?text=FAKE+100%25+BR',
+              },
+            },
+          },
+        },
+      },
+      'FAKE75': {
+        'status': 1,
+        'product': {
+          'product_name': '[TESTE] Produto 75% Brasileiro',
+          'brands': 'Empresa Majoritariamente Brasileira',
+          'countries': 'Brasil, Argentina',
+          'manufacturing_places': 'Rio de Janeiro, Brasil',
+          'origins': 'Ingredientes Brasileiros e Importados',
+          'countries_tags': ['en:brazil', 'en:argentina'],
+          'made_in': 'Brasil',
+          'image_front_url': 'https://via.placeholder.com/200x200/4CAF50/FFFFFF?text=FAKE+75%25+BR',
+          'selected_images': {
+            'front': {
+              'display': {
+                'pt': 'https://via.placeholder.com/200x200/4CAF50/FFFFFF?text=FAKE+75%25+BR',
+              },
+            },
+          },
+        },
+      },
+      'FAKE50': {
+        'status': 1,
+        'product': {
+          'product_name': '[TESTE] Produto 50% Brasileiro',
+          'brands': 'Empresa Parcialmente Brasileira',
+          'countries': 'Brasil, Argentina',
+          'manufacturing_places': 'Argentina',
+          'origins': 'Ingredientes Mistos',
+          'countries_tags': ['en:brazil', 'en:argentina'],
+          'made_in': 'Brasil',
+          'image_front_url': 'https://via.placeholder.com/200x200/FFC107/000000?text=FAKE+50%25+BR',
+          'selected_images': {
+            'front': {
+              'display': {
+                'pt': 'https://via.placeholder.com/200x200/FFC107/000000?text=FAKE+50%25+BR',
+              },
+            },
+          },
+        },
+      },
+      'FAKE30': {
+        'status': 1,
+        'product': {
+          'product_name': '[TESTE] Produto 30% Brasileiro',
+          'brands': 'Empresa Pouco Brasileira',
+          'countries': 'México, Brasil',
+          'manufacturing_places': 'México',
+          'origins': 'Ingredientes Importados',
+          'countries_tags': ['en:mexico', 'en:brazil'],
+          'made_in': 'México',
+          'image_front_url': 'https://via.placeholder.com/200x200/FF9800/FFFFFF?text=FAKE+30%25+BR',
+          'selected_images': {
+            'front': {
+              'display': {
+                'pt': 'https://via.placeholder.com/200x200/FF9800/FFFFFF?text=FAKE+30%25+BR',
+              },
+            },
+          },
+        },
+      },
+      'FAKE15': {
+        'status': 1,
+        'product': {
+          'product_name': '[TESTE] Produto 15% Brasileiro',
+          'brands': 'Empresa Minimamente Brasileira',
+          'countries': 'Chile',
+          'manufacturing_places': 'Chile',
+          'origins': 'Ingredientes Chilenos',
+          'countries_tags': ['en:chile'],
+          'made_in': 'Chile',
+          'image_front_url': 'https://via.placeholder.com/200x200/FF5722/FFFFFF?text=FAKE+15%25+BR',
+          'selected_images': {
+            'front': {
+              'display': {
+                'pt': 'https://via.placeholder.com/200x200/FF5722/FFFFFF?text=FAKE+15%25+BR',
+              },
+            },
+          },
+        },
+      },
+      'FAKE0': {
+        'status': 1,
+        'product': {
+          'product_name': '[TESTE] Produto 0% Brasileiro',
+          'brands': 'Marca Estrangeira Internacional',
+          'countries': 'França',
+          'manufacturing_places': 'França',
+          'origins': 'Ingredientes Franceses',
+          'countries_tags': ['en:france'],
+          'made_in': 'França',
+          'image_front_url': 'https://via.placeholder.com/200x200/607D8B/FFFFFF?text=FAKE+0%25+BR',
+          'selected_images': {
+            'front': {
+              'display': {
+                'pt': 'https://via.placeholder.com/200x200/607D8B/FFFFFF?text=FAKE+0%25+BR',
+              },
+            },
+          },
+        },
+      },
+      'FAKEUSA': {
+        'status': 1,
+        'product': {
+          'product_name': '[TESTE] Produto Americano',
+          'brands': 'American Corporation',
+          'countries': 'Estados Unidos',
+          'manufacturing_places': 'California, Estados Unidos',
+          'origins': 'Ingredientes Americanos',
+          'countries_tags': ['en:united-states'],
+          'made_in': 'Estados Unidos',
+          'image_front_url': 'https://via.placeholder.com/200x200/FF6B6B/FFFFFF?text=FAKE+USA',
+          'selected_images': {
+            'front': {
+              'display': {'pt': 'https://via.placeholder.com/200x200/FF6B6B/FFFFFF?text=FAKE+USA'},
+            },
+          },
+        },
+      },
+    };
+
+    return fakeProducts[barcode] ?? {'status': 0, 'product': null};
   }
 }
