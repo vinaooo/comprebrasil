@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'barcode_scanner_page.dart';
 import 'search_page.dart';
+import 'developer_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DeveloperOptions.initialize();
   runApp(const MyApp());
 }
 
@@ -13,6 +16,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'CompreBrasil',
+      // Tema claro - respeitando as cores da bandeira do Brasil
       theme: ThemeData(
         colorScheme:
             ColorScheme.fromSeed(
@@ -37,6 +41,33 @@ class MyApp extends StatelessWidget {
           style: ElevatedButton.styleFrom(elevation: 2, shadowColor: Colors.black26),
         ),
       ),
+      // Tema escuro - adaptando as cores da bandeira para o modo escuro
+      darkTheme: ThemeData(
+        colorScheme:
+            ColorScheme.fromSeed(
+              seedColor: const Color(0xFF009639), // Verde Brasil
+              brightness: Brightness.dark,
+            ).copyWith(
+              primary: const Color(0xFF00A63F), // Verde Brasil mais claro para contraste
+              secondary: const Color(0xFFFFD700), // Amarelo Brasil mais claro
+              tertiary: const Color(0xFF4A90E2), // Azul Brasil mais claro
+              surface: const Color(0xFF1A1A1A),
+              onPrimary: Colors.white,
+              onSecondary: const Color(0xFF1A1A1A),
+              onSurface: Colors.white,
+            ),
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF00A63F),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(elevation: 2, shadowColor: Colors.black54),
+        ),
+      ),
+      // Seguir o tema do sistema automaticamente
+      themeMode: ThemeMode.system,
       home: const MyHomePage(title: 'Compre no Brasil'),
     );
   }
@@ -161,29 +192,23 @@ class ConfiguracoesPage extends StatelessWidget {
         child: Column(
           children: [
             ListTile(
-              leading: const Icon(Icons.notifications),
-              title: const Text('Notificações'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                // TODO: Implementar configurações de notificações
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.location_on),
-              title: const Text('Localização'),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                // TODO: Implementar configurações de localização
-              },
-            ),
-            const Divider(),
-            ListTile(
               leading: const Icon(Icons.privacy_tip),
               title: const Text('Privacidade'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 // TODO: Implementar configurações de privacidade
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.developer_mode),
+              title: const Text('Opções de Desenvolvedor'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DeveloperOptionsPage()),
+                );
               },
             ),
             const Divider(),
@@ -194,6 +219,68 @@ class ConfiguracoesPage extends StatelessWidget {
               onTap: () {
                 // TODO: Implementar informações sobre o app
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class DeveloperOptionsPage extends StatefulWidget {
+  const DeveloperOptionsPage({super.key});
+
+  @override
+  State<DeveloperOptionsPage> createState() => _DeveloperOptionsPageState();
+}
+
+class _DeveloperOptionsPageState extends State<DeveloperOptionsPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Opções de Desenvolvedor'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Opções de Debug',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    CheckboxListTile(
+                      title: const Text('Mostrar Códigos de Teste'),
+                      subtitle: const Text(
+                        'Exibe o quadro "Código para Testes" na página de pesquisa',
+                      ),
+                      value: DeveloperOptions.showTestCodes,
+                      onChanged: (value) async {
+                        await DeveloperOptions.setShowTestCodes(value ?? false);
+                        setState(() {});
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Mostrar OpenFoodFacts JSON'),
+                      subtitle: const Text('Exibe os dados JSON do OpenFoodFacts na análise'),
+                      value: DeveloperOptions.showOpenFoodFactsJson,
+                      onChanged: (value) async {
+                        await DeveloperOptions.setShowOpenFoodFactsJson(value ?? false);
+                        setState(() {});
+                      },
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),

@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   mobile_scanner: ^7.0.1
   http: ^1.1.0
+  country_flags: ^3.3.0
+  font_awesome_flutter: ^10.8.0
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

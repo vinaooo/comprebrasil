@@ -18,13 +18,13 @@ import 'package:http/http.dart' as http;
 /// • Bônus Cadeia Brasileira (5 pontos): Toda cadeia proprietária no Brasil
 /// • Bônus OpenFoodFacts (até 70 pontos): Dados de fabricação e origem
 ///
-/// CLASSIFICAÇÃO FINAL:5
-/// • 85-100%: 🇧🇷 Totalmente Brasileira
-/// • 65-84%: 🟢 Majoritariamente Brasileira
-/// • 45-64%: 🟡 Parcialmente Brasileira
-/// • 25-44%: 🟠 Pouco Brasileira
-/// • 1-24%: 🔴 Minimamente Brasileira
-/// • 0%: 🌍 Marca Estrangeira
+/// CLASSIFICAÇÃO FINAL:
+/// • 85-100%: BR Totalmente Brasileira
+/// • 65-84%: STAR Majoritariamente Brasileira
+/// • 45-64%: STAR Parcialmente Brasileira
+/// • 25-44%: STAR Pouco Brasileira
+/// • 1-24%: WARNING Minimamente Brasileira
+/// • 0%: WORLD Marca Estrangeira
 class BrasileiridadeService {
   // ==========================================================================
   // CONFIGURAÇÕES E CONSTANTES
@@ -61,7 +61,7 @@ class BrasileiridadeService {
         marca.contains('Empresa Minimamente Brasileira') ||
         marca.contains('Marca Estrangeira Internacional') ||
         marca.contains('American Corporation')) {
-      print('🔍 Produto FAKE detectado - usando dados isolados: "$marca"');
+      print('[FAKE] Produto FAKE detectado - usando dados isolados: "$marca"');
       return _getFakeAnalysisResult(marca);
     }
 
@@ -69,7 +69,7 @@ class BrasileiridadeService {
     final marcaNormalizada = _normalizarMarca(marca);
     final variacoes = _gerarVariacoesMarca(marcaNormalizada);
 
-    print('🔍 Analisando brasileiridade de "$marca"');
+    print('[BUSCA] Analisando brasileiridade de "$marca"');
     print('Testando ${variacoes.length} variações: ${variacoes.join(', ')}');
 
     // ETAPA 2: Inicialização do resultado da análise
@@ -96,7 +96,7 @@ class BrasileiridadeService {
         analise.cadeiaProprietaria = cadeia;
         analise.propriedadeLocal = cadeia.first; // Proprietário direto
         analise.propriedadeMatriz = cadeia.last; // Proprietário final
-        print('✓ Cadeia proprietária: ${cadeia.join(' → ')}');
+        print('[OK] Cadeia proprietária: ${cadeia.join(' → ')}');
         break;
       }
     }
@@ -107,7 +107,7 @@ class BrasileiridadeService {
       final fabricacao = await _buscarFabricacao(variacao);
       if (fabricacao != null) {
         analise.fabricacao = fabricacao;
-        print('✓ Fabricação/Sede: $fabricacao');
+        print('[OK] Fabricação/Sede: $fabricacao');
         break;
       }
     }
@@ -118,7 +118,7 @@ class BrasileiridadeService {
       final origem = await _buscarOrigemMarca(variacao);
       if (origem != null) {
         analise.origem = origem;
-        print('✓ Origem encontrada: $origem');
+        print('[OK] Origem encontrada: $origem');
         break;
       }
     }
@@ -136,7 +136,7 @@ class BrasileiridadeService {
       // Retorna resultado indicando dados insuficientes
       analise.semDados = true;
       analise.grauBrasileiridade = null;
-      analise.classificacao = '❓ Análise não foi possível';
+      analise.classificacao = 'QUESTION Análise não foi possível';
       analise.detalhes = ['Dados insuficientes no Wikidata'];
       return analise;
     }
@@ -181,7 +181,7 @@ class BrasileiridadeService {
         propriedadeMatriz: null,
         cadeiaProprietaria: [],
         grauBrasileiridade: null,
-        classificacao: '❓ Nenhuma marca válida encontrada',
+        classificacao: 'QUESTION Nenhuma marca válida encontrada',
         detalhes: ['Entrada inválida'],
         semDados: true,
       );
@@ -193,7 +193,7 @@ class BrasileiridadeService {
     }
 
     // ETAPA 2: Análise comparativa
-    print('🔍 MODO COMPARATIVO: Analisando ${marcas.length} marcas');
+    print('[BUSCA] MODO COMPARATIVO: Analisando ${marcas.length} marcas');
     print('Marcas: ${marcas.join(', ')}');
 
     final resultados = <AnaliseResult>[];
@@ -201,7 +201,7 @@ class BrasileiridadeService {
     // 2.1. Análise individual de cada marca
     for (int i = 0; i < marcas.length; i++) {
       final marca = marcas[i];
-      print('\n📍 [${i + 1}/${marcas.length}] Analisando "$marca"');
+      print('\n[LOCAL] [${i + 1}/${marcas.length}] Analisando "$marca"');
 
       try {
         final analise = await analisarBrasileiridade(marca);
@@ -214,7 +214,7 @@ class BrasileiridadeService {
           print('   Brasileiridade: ${analise.grauBrasileiridade}% - ${analise.classificacao}');
         }
       } catch (error) {
-        print('   ❌ Erro ao analisar "$marca": $error');
+        print('   [ERRO] Erro ao analisar "$marca": $error');
         // Adiciona resultado de erro para não interromper o processo
         resultados.add(
           AnaliseResult(
@@ -225,7 +225,7 @@ class BrasileiridadeService {
             propriedadeMatriz: null,
             cadeiaProprietaria: [],
             grauBrasileiridade: null,
-            classificacao: '❌ Erro na análise',
+            classificacao: 'ERRO Erro na análise',
             detalhes: ['Erro: $error'],
             semDados: true,
           ),
@@ -239,7 +239,7 @@ class BrasileiridadeService {
         .toList();
 
     if (marcasValidas.isEmpty) {
-      print('\n❌ Nenhuma marca válida encontrada');
+      print('\n[ERRO] Nenhuma marca válida encontrada');
       return AnaliseResult(
         marca: marcasString,
         origem: null,
@@ -248,7 +248,7 @@ class BrasileiridadeService {
         propriedadeMatriz: null,
         cadeiaProprietaria: [],
         grauBrasileiridade: null,
-        classificacao: '❌ Dados insuficientes para todas as marcas',
+        classificacao: 'ERRO Dados insuficientes para todas as marcas',
         detalhes: ['Nenhuma das marcas teve dados suficientes para análise'],
         semDados: true,
       );
@@ -259,7 +259,7 @@ class BrasileiridadeService {
       (prev, atual) => atual.grauBrasileiridade! > prev.grauBrasileiridade! ? atual : prev,
     );
 
-    print('\n🏆 MARCA MAIS BRASILEIRA: ${marcaMaisBrasileira.marca}');
+    print('\n[MELHOR] MARCA MAIS BRASILEIRA: ${marcaMaisBrasileira.marca}');
     print('Grau: ${marcaMaisBrasileira.grauBrasileiridade}%');
     print('Classificação: ${marcaMaisBrasileira.classificacao}');
 
@@ -311,14 +311,14 @@ class BrasileiridadeService {
     Map<String, dynamic> productData,
     AnaliseResult analiseExistente,
   ) {
-    print('🔍 Analisando dados OpenFoodFacts para brasileiridade');
-    print('📊 Marca: ${analiseExistente.marca}');
-    print('📊 Grau atual: ${analiseExistente.grauBrasileiridade}%');
-    print('📊 Classificação atual: ${analiseExistente.classificacao}');
+    print('[BUSCA] Analisando dados OpenFoodFacts para brasileiridade');
+    print('[DADOS] Marca: ${analiseExistente.marca}');
+    print('[DADOS] Grau atual: ${analiseExistente.grauBrasileiridade}%');
+    print('[DADOS] Classificação atual: ${analiseExistente.classificacao}');
 
     final product = productData['product'];
     if (product == null) {
-      print('⚠️ Produto não encontrado nos dados OpenFoodFacts');
+      print('[AVISO] Produto não encontrado nos dados OpenFoodFacts');
       return analiseExistente;
     }
 
@@ -338,7 +338,7 @@ class BrasileiridadeService {
       if (_contemBrasil(manufacturingPlaces)) {
         bonusOpenFoodFacts += 15;
         detalhesOpenFoodFacts.add('Fabricado no Brasil: $manufacturingPlaces');
-        print('✓ Manufacturing Places indica Brasil: $manufacturingPlaces');
+        print('[OK] Manufacturing Places indica Brasil: $manufacturingPlaces');
       } else {
         detalhesOpenFoodFacts.add('Local de fabricação: $manufacturingPlaces');
       }
@@ -350,7 +350,7 @@ class BrasileiridadeService {
       if (_contemBrasil(origins)) {
         bonusOpenFoodFacts += 10;
         detalhesOpenFoodFacts.add('Ingredientes do Brasil: $origins');
-        print('✓ Origins indica Brasil: $origins');
+        print('[OK] Origins indica Brasil: $origins');
       } else {
         detalhesOpenFoodFacts.add('Origem dos ingredientes: $origins');
       }
@@ -369,7 +369,7 @@ class BrasileiridadeService {
       if (temBrasilTag) {
         bonusOpenFoodFacts += 20;
         detalhesOpenFoodFacts.add('Tags de país incluem Brasil: ${countriesTags.join(', ')}');
-        print('✓ Countries Tags indica Brasil: ${countriesTags.join(', ')}');
+        print('[OK] Countries Tags indica Brasil: ${countriesTags.join(', ')}');
       } else {
         detalhesOpenFoodFacts.add('Tags de países: ${countriesTags.join(', ')}');
       }
@@ -381,7 +381,7 @@ class BrasileiridadeService {
       if (_contemBrasil(madeIn)) {
         bonusOpenFoodFacts += 25;
         detalhesOpenFoodFacts.add('Fabricado em: $madeIn');
-        print('✓ Made In indica Brasil: $madeIn');
+        print('[OK] Made In indica Brasil: $madeIn');
       } else {
         detalhesOpenFoodFacts.add('Fabricado em: $madeIn');
       }
@@ -409,7 +409,7 @@ class BrasileiridadeService {
 
     // ETAPA 4: Recálculo do grau de brasileiridade com bônus
     if (!novaAnalise.semDados && novaAnalise.grauBrasileiridade != null) {
-      print('📊 Recalculando grau de brasileiridade:');
+      print('[DADOS] Recalculando grau de brasileiridade:');
       print('   - Grau base: ${novaAnalise.grauBrasileiridade}%');
       print('   - Bônus OpenFoodFacts: +${bonusOpenFoodFacts} pontos');
 
@@ -424,7 +424,7 @@ class BrasileiridadeService {
       // Log do bônus aplicado
       if (bonusOpenFoodFacts > 0) {
         novaAnalise.detalhes.add('Bônus OpenFoodFacts: +$bonusOpenFoodFacts pontos');
-        print('✓ Bônus OpenFoodFacts aplicado: +$bonusOpenFoodFacts pontos');
+        print('[OK] Bônus OpenFoodFacts aplicado: +$bonusOpenFoodFacts pontos');
         print('✓ Novo grau de brasileiridade: $novoGrau%');
       }
     }
@@ -1024,12 +1024,12 @@ class BrasileiridadeService {
   /// • 1-24%: Minimamente Brasileira (conexão mínima com o Brasil)
   /// • 0%: Marca Estrangeira (sem conexão identificada com o Brasil)
   static String _classificarBrasileiridade(int grau) {
-    if (grau >= 85) return '🇧🇷 Totalmente Brasileira'; // 85-100%
-    if (grau >= 65) return '🟢 Majoritariamente Brasileira'; // 65-84%
-    if (grau >= 45) return '🟡 Parcialmente Brasileira'; // 45-64%
-    if (grau >= 25) return '🟠 Pouco Brasileira'; // 25-44%
-    if (grau > 0) return '🔴 Minimamente Brasileira'; // 1-24%
-    return '🌍 Marca Estrangeira'; // 0%
+    if (grau >= 85) return 'BR Totalmente Brasileira'; // 85-100%
+    if (grau >= 65) return 'STAR Majoritariamente Brasileira'; // 65-84%
+    if (grau >= 45) return 'STAR Parcialmente Brasileira'; // 45-64%
+    if (grau >= 25) return 'STAR Pouco Brasileira'; // 25-44%
+    if (grau > 0) return 'WARNING Minimamente Brasileira'; // 1-24%
+    return 'WORLD Marca Estrangeira'; // 0%
   }
 
   /// Gera lista de detalhes descritivos da análise
@@ -1064,7 +1064,7 @@ class BrasileiridadeService {
 
   /// Retorna análise fictícia para produtos de teste
   static AnaliseResult _getFakeAnalysisResult(String marca) {
-    print('🔍 Buscando dados fictícios para: "$marca"');
+    print('[BUSCA] Buscando dados fictícios para: "$marca"');
 
     final fakeAnalysis = {
       'Marca Brasileira LTDA': AnaliseResult(
@@ -1078,7 +1078,7 @@ class BrasileiridadeService {
           'Holding Brasileira LTDA (Brasil)',
         ],
         grauBrasileiridade: 90, // Base 90% (já "Totalmente Brasileira")
-        classificacao: '🇧🇷 Totalmente Brasileira',
+        classificacao: 'BR Totalmente Brasileira',
         detalhes: [
           'Origem: Brasil',
           'Fabricação/Sede: Brasil',
@@ -1101,7 +1101,7 @@ class BrasileiridadeService {
           'Multinacional Latino-Argentina (Argentina)',
         ],
         grauBrasileiridade: 5, // Base 5% + 70% bonus = 75%
-        classificacao: '🟢 Majoritariamente Brasileira',
+        classificacao: 'STAR Majoritariamente Brasileira',
         detalhes: [
           'Origem: Brasil',
           'Fabricação/Sede: Brasil',
@@ -1124,7 +1124,7 @@ class BrasileiridadeService {
           'Holding Internacional (Espanha)',
         ],
         grauBrasileiridade: 5, // Base 5% + 45% bonus = 50%
-        classificacao: '🟡 Parcialmente Brasileira',
+        classificacao: 'STAR Parcialmente Brasileira',
         detalhes: [
           'Origem: Argentina',
           'Fabricação/Sede: Brasil',
@@ -1144,7 +1144,7 @@ class BrasileiridadeService {
         propriedadeMatriz: 'Corporação Internacional (Canadá)',
         cadeiaProprietaria: ['Empresa Mexicana S.A. (México)', 'Corporação Internacional (Canadá)'],
         grauBrasileiridade: 10, // Base 10% + 20% bonus = 30%
-        classificacao: '🟠 Pouco Brasileira',
+        classificacao: 'STAR Pouco Brasileira',
         detalhes: [
           'Origem: México',
           'Fabricação/Sede: México',
@@ -1164,7 +1164,7 @@ class BrasileiridadeService {
         propriedadeMatriz: 'Multinacional Européia (França)',
         cadeiaProprietaria: ['Empresa Chilena LTDA (Chile)', 'Multinacional Européia (França)'],
         grauBrasileiridade: 15, // Base 15% + 0% bonus = 15%
-        classificacao: '🔴 Minimamente Brasileira',
+        classificacao: 'WARNING Minimamente Brasileira',
         detalhes: [
           'Origem: Chile',
           'Fabricação/Sede: Chile',
@@ -1184,7 +1184,7 @@ class BrasileiridadeService {
         propriedadeMatriz: 'Groupe International (França)',
         cadeiaProprietaria: ['Société Française S.A. (França)', 'Groupe International (França)'],
         grauBrasileiridade: 0,
-        classificacao: '🌍 Marca Estrangeira',
+        classificacao: 'WORLD Marca Estrangeira',
         detalhes: [
           'Origem: França',
           'Fabricação/Sede: França',
@@ -1211,7 +1211,7 @@ class BrasileiridadeService {
           'US Global Corporation (Estados Unidos)',
         ],
         grauBrasileiridade: 0, // Base 0% + 0% bonus = 0%
-        classificacao: '🌍 Marca Estrangeira',
+        classificacao: 'WORLD Marca Estrangeira',
         detalhes: [
           'Origem: Estados Unidos',
           'Fabricação/Sede: Estados Unidos',
@@ -1279,7 +1279,7 @@ class BrasileiridadeService {
       return resultado;
     }
 
-    print('⚠️ Produto FAKE não encontrado nos dados fictícios: "$marca"');
+    print('[AVISO] Produto FAKE não encontrado nos dados fictícios: "$marca"');
 
     // Fallback para marca não encontrada
     return AnaliseResult(
@@ -1290,7 +1290,7 @@ class BrasileiridadeService {
       propriedadeMatriz: null,
       cadeiaProprietaria: [],
       grauBrasileiridade: null,
-      classificacao: '❓ Análise não foi possível',
+      classificacao: 'QUESTION Análise não foi possível',
       detalhes: ['Dados fictícios não encontrados'],
       semDados: true,
     );

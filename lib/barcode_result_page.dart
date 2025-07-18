@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:country_flags/country_flags.dart';
 import 'openfoodfacts_service.dart';
 import 'brasileiridade_service.dart';
+import 'developer_options.dart';
 
 class BarcodeResultPage extends StatefulWidget {
   final String barcodeResult;
@@ -180,15 +182,19 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
     }
 
     if (productData == null) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.info_outline, size: 48, color: Colors.grey),
+            Icon(
+              Icons.info_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
             SizedBox(height: 16),
             Text(
               'Nenhuma informação encontrada para este produto.',
-              style: TextStyle(fontSize: 16),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
               textAlign: TextAlign.center,
             ),
           ],
@@ -226,7 +232,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
           const SizedBox(height: 12),
         ],
         const Divider(height: 32),
-        if (_showJsonData)
+        if (_showJsonData || DeveloperOptions.showOpenFoodFactsJson)
           ExpansionTile(
             title: const Text(
               'Dados Completos (JSON)',
@@ -242,9 +248,9 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
                 ),
                 child: isLoadingComplete
                     ? const Column(
@@ -282,9 +288,9 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
           ),
           child: SelectableText(
             _formatJson(productData!),
@@ -299,9 +305,9 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -319,16 +325,16 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     product['product_name'],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -341,16 +347,16 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     product['brands'],
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -402,18 +408,25 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
         width: 80,
         height: 80,
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.image_not_supported, size: 24, color: Colors.grey[400]),
+            Icon(
+              Icons.image_not_supported,
+              size: 24,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
             const SizedBox(height: 4),
             Text(
               'Sem imagem',
-              style: TextStyle(color: Colors.grey[600], fontSize: 10),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                fontSize: 10,
+              ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -426,7 +439,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
       height: 80,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(0.3)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
@@ -453,15 +466,25 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.broken_image, size: 24, color: Colors.grey[400]),
+                  Icon(
+                    Icons.broken_image,
+                    size: 24,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  ),
                   const SizedBox(height: 4),
-                  Text('Erro', style: TextStyle(color: Colors.grey[600], fontSize: 10)),
+                  Text(
+                    'Erro',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      fontSize: 10,
+                    ),
+                  ),
                 ],
               ),
             );
@@ -481,16 +504,21 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   }
 
   Widget _buildBrasileiridadeAnalise() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final blueColor = isDarkMode ? Colors.blue[300] : Colors.blue[600];
+    final backgroundColor = isDarkMode ? Colors.blue[900]?.withValues(alpha: 0.2) : Colors.blue[50];
+    final borderColor = isDarkMode ? Colors.blue[700]?.withValues(alpha: 0.5) : Colors.blue[200];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Icon(Icons.analytics, size: 16, color: Colors.blue[600]),
+            Icon(Icons.analytics, size: 16, color: blueColor),
             const SizedBox(width: 8),
             Text(
               'Análise de Brasileiridade',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue[600]),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: blueColor),
             ),
           ],
         ),
@@ -501,9 +529,9 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
+              color: backgroundColor,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: Colors.blue[200]!),
+              border: Border.all(color: borderColor ?? Colors.blue[200]!),
             ),
             child: isLoadingAnalise
                 ? const Row(
@@ -547,7 +575,9 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                             Expanded(
                               child: LinearProgressIndicator(
                                 value: (analiseResultado!.grauBrasileiridade ?? 0) / 100,
-                                backgroundColor: Colors.grey[300],
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.outline.withOpacity(0.3),
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   _getCorBrasileiridade(analiseResultado!.grauBrasileiridade ?? 0),
                                 ),
@@ -608,7 +638,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(Icons.shopping_cart, color: Colors.white, size: 20),
+            Icon(Icons.shopping_cart, color: Theme.of(context).colorScheme.onPrimary, size: 20),
             const SizedBox(width: 8),
             const Text('Informações do Produto'),
           ],
@@ -626,43 +656,58 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                 child: Padding(padding: const EdgeInsets.all(16.0), child: _buildProductInfo()),
               ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Escanear Novamente'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.home),
-                    label: const Text('Voltar ao Início'),
-                  ),
-                ),
-              ],
+          ],
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -3),
             ),
           ],
+        ),
+        child: SafeArea(
+          child: Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Escanear Novamente'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.home),
+                  label: const Text('Voltar ao Início'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -703,7 +748,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Text('🇺🇸', style: TextStyle(fontSize: 20)),
+              child: const Icon(Icons.flag, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -728,7 +773,6 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
                 ],
               ),
             ),
-            const Text('🇺🇸', style: TextStyle(fontSize: 20)),
           ],
         ),
       );
@@ -741,60 +785,46 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
   Widget _buildClassificationCard(int grau) {
     Color primaryColor;
     Color secondaryColor;
-    String emoji;
     String title;
     String description;
-    String finalIcon; // Mudamos de IconData para String para emojis
 
     if (grau >= 85) {
-      // 85-100%: 🇧🇷 Totalmente Brasileira
+      // 85-100%: Totalmente Brasileira
       primaryColor = const Color(0xFF009639);
       secondaryColor = const Color(0xFF00B142);
-      emoji = '🟢';
       title = 'TOTALMENTE BRASILEIRA';
       description =
-          'Produto 100% brasileiro! Comprando você fortalece nossa economia. ${grau}% brasileira 💚';
-      finalIcon = '🇧🇷'; // Bandeira brasileira
+          'Produto 100% brasileiro! Comprando você fortalece nossa economia. ${grau}% brasileira';
     } else if (grau >= 65) {
-      // 65-84%: 🟢 Majoritariamente Brasileira
+      // 65-84%: Majoritariamente Brasileira
       primaryColor = const Color(0xFF4CAF50);
       secondaryColor = const Color(0xFF66BB6A);
-      emoji = '🟢';
       title = 'MAJORITARIAMENTE BRASILEIRA';
-      description = 'Produto com forte conexão brasileira! ${grau}% brasileira 💚';
-      finalIcon = '🇧🇷'; // Bandeira brasileira
+      description = 'Produto com forte conexão brasileira! ${grau}% brasileira';
     } else if (grau >= 45) {
-      // 45-64%: 🟡 Parcialmente Brasileira
+      // 45-64%: Parcialmente Brasileira
       primaryColor = const Color(0xFFFFC107);
       secondaryColor = const Color(0xFFFFD54F);
-      emoji = '🟡';
       title = 'PARCIALMENTE BRASILEIRA';
       description = 'Produto com conexão parcial ao Brasil. ${grau}% brasileira';
-      finalIcon = '⚠️'; // Ícone de alerta
     } else if (grau >= 25) {
-      // 25-44%: 🟠 Pouco Brasileira
+      // 25-44%: Pouco Brasileira
       primaryColor = const Color(0xFFFF9800);
       secondaryColor = const Color(0xFFFFB74D);
-      emoji = '🟠';
       title = 'POUCO BRASILEIRA';
       description = 'Produto com baixa conexão ao Brasil. ${grau}% brasileira';
-      finalIcon = '⚠️'; // Ícone de alerta
     } else if (grau > 0) {
-      // 1-24%: 🔴 Minimamente Brasileira
+      // 1-24%: Minimamente Brasileira
       primaryColor = const Color(0xFFFF5722);
       secondaryColor = const Color(0xFFFF7043);
-      emoji = '🔴';
       title = 'MINIMAMENTE BRASILEIRA';
       description = 'Produto com conexão mínima ao Brasil. ${grau}% brasileira';
-      finalIcon = '⚠️'; // Ícone de alerta
     } else {
-      // 0%: 🌍 Marca Estrangeira
+      // 0%: Marca Estrangeira
       primaryColor = const Color(0xFF607D8B);
       secondaryColor = const Color(0xFF78909C);
-      emoji = '🌍';
       title = 'MARCA ESTRANGEIRA';
       description = 'Produto sem conexão identificada com o Brasil';
-      finalIcon = '⚠️'; // Ícone de alerta
     }
 
     return Container(
@@ -823,7 +853,17 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 20)),
+            child: grau >= 85
+                ? CountryFlag.fromCountryCode('BR', height: 20, width: 20)
+                : grau >= 65
+                ? CountryFlag.fromCountryCode('BR', height: 20, width: 20)
+                : grau >= 45
+                ? const Icon(Icons.warning, color: Colors.white, size: 20)
+                : grau >= 25
+                ? const Icon(Icons.warning_amber, color: Colors.white, size: 20)
+                : grau > 0
+                ? const Icon(Icons.error_outline, color: Colors.white, size: 20)
+                : const Icon(Icons.language, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -843,7 +883,6 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
               ],
             ),
           ),
-          Text(finalIcon, style: const TextStyle(fontSize: 20)), // Mudamos de Icon para Text
         ],
       ),
     );
