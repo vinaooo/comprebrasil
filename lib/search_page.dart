@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'barcode_result_page.dart';
+import 'brand_search_result_page.dart';
 import 'developer_options.dart';
 
 class SearchPage extends StatefulWidget {
@@ -12,40 +13,57 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController _searchController = TextEditingController();
-  bool _isValidBarcode = false;
+  bool _isValidInput = false;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_validateBarcode);
+    _searchController.addListener(_validateInput);
   }
 
   @override
   void dispose() {
-    _searchController.removeListener(_validateBarcode);
+    _searchController.removeListener(_validateInput);
     _searchController.dispose();
     super.dispose();
   }
 
-  void _validateBarcode() {
+  void _validateInput() {
     final text = _searchController.text.trim();
-    // Verificar se é um código de barras válido (apenas números, 8-14 dígitos)
-    final isValid = RegExp(r'^\d{8,14}$').hasMatch(text);
+    // Aceita códigos de barras (8-14 dígitos), códigos FAKE para teste, ou nomes de marca/produto (mínimo 2 caracteres)
+    final isValid =
+        RegExp(r'^\d{8,14}$').hasMatch(text) ||
+        text.startsWith('FAKE') ||
+        (text.isNotEmpty && text.length >= 2 && !RegExp(r'^\d+$').hasMatch(text));
 
-    if (_isValidBarcode != isValid) {
+    if (_isValidInput != isValid) {
       setState(() {
-        _isValidBarcode = isValid;
+        _isValidInput = isValid;
       });
     }
   }
 
+  bool _isBarcode(String value) {
+    return RegExp(r'^\d{8,14}$').hasMatch(value) || value.startsWith('FAKE');
+  }
+
   void _searchProduct() {
-    if (_isValidBarcode) {
-      final barcode = _searchController.text.trim();
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => BarcodeResultPage(barcodeResult: barcode)),
-      );
+    if (_isValidInput) {
+      final searchText = _searchController.text.trim();
+
+      if (_isBarcode(searchText)) {
+        // Busca por código de barras - vai para a página tradicional
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => BarcodeResultPage(barcodeResult: searchText)),
+        );
+      } else {
+        // Busca por marca/nome do produto - vai direto para análise
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => BrandSearchResultPage(brandName: searchText)),
+        );
+      }
     }
   }
 
@@ -74,7 +92,7 @@ class _SearchPageState extends State<SearchPage> {
                         Icon(Icons.search, color: Theme.of(context).colorScheme.primary, size: 24),
                         const SizedBox(width: 8),
                         Text(
-                          'Digite o Código de Barras',
+                          'Digite o Código ou Nome da Marca',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -86,15 +104,11 @@ class _SearchPageState extends State<SearchPage> {
                     const SizedBox(height: 20),
                     TextField(
                       controller: _searchController,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(14),
-                      ],
+                      keyboardType: TextInputType.text,
                       decoration: InputDecoration(
-                        labelText: 'Código de Barras',
-                        hintText: 'Ex: 7891000053508',
-                        prefixIcon: const Icon(Icons.barcode_reader),
+                        labelText: 'Código de Barras ou Nome da Marca',
+                        hintText: 'Ex: 7891000053508 ou Nestlé',
+                        prefixIcon: const Icon(Icons.search),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(icon: const Icon(Icons.clear), onPressed: _clearSearch)
                             : null,
@@ -105,7 +119,7 @@ class _SearchPageState extends State<SearchPage> {
                       onSubmitted: (_) => _searchProduct(),
                     ),
                     const SizedBox(height: 16),
-                    if (_searchController.text.isNotEmpty && !_isValidBarcode)
+                    if (_searchController.text.isNotEmpty && !_isValidInput)
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -119,7 +133,7 @@ class _SearchPageState extends State<SearchPage> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Digite um código válido (8-14 números)',
+                                'Digite um código válido (8-14 números) ou nome da marca/produto (mín. 2 caracteres)',
                                 style: TextStyle(color: Colors.orange[700], fontSize: 14),
                               ),
                             ),
@@ -131,14 +145,14 @@ class _SearchPageState extends State<SearchPage> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _isValidBarcode
+                          backgroundColor: _isValidInput
                               ? Theme.of(context).colorScheme.primary
                               : Colors.grey[400],
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: _isValidBarcode ? _searchProduct : null,
+                        onPressed: _isValidInput ? _searchProduct : null,
                         icon: const Icon(Icons.search),
                         label: const Text(
                           'Buscar Produto',
@@ -223,17 +237,7 @@ class _SearchPageState extends State<SearchPage> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor),
         child: SafeArea(
           child: SizedBox(
             width: double.infinity,

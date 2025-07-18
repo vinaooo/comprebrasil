@@ -2,25 +2,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "comprebrasil (Flutter)",
+            "name": "comprebrasil (Debug)",
             "request": "launch",
             "type": "dart",
-            "program": "lib/main.dart",
-            "args": [
-                "--debug"
-            ]
+            "program": "lib/main.dart"
         },
         {
-            "name": "comprebrasil (Flutter Debug)",
-            "request": "launch",
-            "type": "dart",
-            "program": "lib/main.dart",
-            "args": [
-                "--debug"
-            ]
-        },
-        {
-            "name": "comprebrasil (Flutter Release)",
+            "name": "comprebrasil (Release)",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -29,42 +17,12 @@
             ]
         },
         {
-            "name": "comprebrasil (Flutter Profile)",
+            "name": "comprebrasil (Profile)",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
             "args": [
                 "--profile"
-            ]
-        },
-        {
-            "name": "comprebrasil (Flutter motorola edge 30 ultra)",
-            "request": "launch",
-            "type": "dart",
-            "program": "lib/main.dart",
-            "deviceId": "192.168.3.235:37577",
-            "args": [
-                "--debug"
-            ]
-        },
-        {
-            "name": "comprebrasil (Flutter motorola edge 30 ultra (wireless))",
-            "request": "launch",
-            "type": "dart",
-            "program": "lib/main.dart",
-            "deviceId": "192.168.3.235:37577",
-            "args": [
-                "--debug"
-            ]
-        },
-        {
-            "name": "comprebrasil (Flutter Linux)",
-            "request": "launch",
-            "type": "dart",
-            "program": "lib/main.dart",
-            "deviceId": "linux",
-            "args": [
-                "--debug"
             ]
         }
     ]

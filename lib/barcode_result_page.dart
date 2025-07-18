@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:country_flags/country_flags.dart';
 import 'openfoodfacts_service.dart';
-import 'brasileiridade_service.dart';
+import 'services/brasileiridade_service.dart';
 import 'developer_options.dart';
 
 class BarcodeResultPage extends StatefulWidget {
@@ -661,17 +661,7 @@ class _BarcodeResultPageState extends State<BarcodeResultPage> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.2),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, -3),
-            ),
-          ],
-        ),
+        decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor),
         child: SafeArea(
           child: Row(
             children: [
